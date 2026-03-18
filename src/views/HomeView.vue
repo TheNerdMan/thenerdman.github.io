@@ -1,17 +1,21 @@
-<script setup lang="ts">
-import HomeComponent from '@/components/HomeComponent.vue';
-</script>
-
 <template>
   <main class="landing-page">
     <HomeComponent />
     <div class="links">
-      <RouterLink to="/tools">Tools</RouterLink>
+      <RouterLink :to="{ name: ROUTE_NAMES.TOOLS }">Tools</RouterLink>
       <span> | </span>
-      <RouterLink to="/blog">Blogs</RouterLink>
+      <RouterLink :to="{ name: ROUTE_NAMES.BLOG }">Blogs</RouterLink>
+    </div>
+    <div class="links">
+      <RouterLink :to="{ name: ROUTE_NAMES.PLAYGROUND }">Playground</RouterLink>
     </div>
   </main>
 </template>
+
+<script setup lang="ts">
+import HomeComponent from '@/components/HomeComponent.vue';
+import { ROUTE_NAMES } from '@/router';
+</script>
 
 <style scoped>
 .links {

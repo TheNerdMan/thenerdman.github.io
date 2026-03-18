@@ -11,22 +11,23 @@ import { RouterLink } from 'vue-router';
     <h1>Tools</h1>
     <h2>I've built</h2>
     <ul>
-      <li>Unfortunately most of the tools I've built are IP of my employers</li>
+      <li>
+        <a href="https://www.nerdie.dev/jobhunt-dashboard/" target="_blank" rel="noopener noreferrer">Job Tracker - A
+          client side, privacy focused tool, for tracking job hunting</a>
+      </li>
     </ul>
     <h2>I've helped</h2>
     <ul>
       <li>
-        <a href="https://github.com/momentum-mod/website" target="_blank" rel="noopener noreferrer"
-          >Momentum Mod - Website/API</a
-        >
+        <a href="https://github.com/momentum-mod/website" target="_blank" rel="noopener noreferrer">Momentum Mod -
+          Website/API</a>
       </li>
     </ul>
     <h2>I use</h2>
     <ul>
       <li>
-        <a href="https://gitmoji.dev/" target="_blank" rel="noopener noreferrer"
-          >Gitmoji, because yes, emojis should be in git commits too</a
-        >
+        <a href="https://gitmoji.dev/" target="_blank" rel="noopener noreferrer">Gitmoji, because yes, emojis should be
+          in git commits too</a>
       </li>
     </ul>
   </main>
