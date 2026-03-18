@@ -1,4 +1,4 @@
-# nerdie.dev
+# [nerdie.dev](https://nerdie.dev)
 
 A website built using Vue 3 and made static by vite-ssg
 
