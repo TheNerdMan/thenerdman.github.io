@@ -13,10 +13,10 @@
         </ul>
       </section>
 
-      <section id="tools" class="landing__section">
+      <section id="creations" class="landing__section">
         <h2 class="landing__eyebrow landing__eyebrow--cyan">Tools I've built &amp; use</h2>
         <ul class="cards">
-          <li v-for="tool in tools" :key="tool.name">
+          <li v-for="tool in creations" :key="tool.name">
             <a class="card glass-card" :style="accent(tool.accent)" :href="tool.href" target="_blank"
               rel="noopener noreferrer">
               <span class="card__icon"><iconify-icon :icon="tool.icon" /></span>
@@ -108,7 +108,7 @@ const stack = [
   'Vite SSG',
 ];
 
-const tools = [
+const creations = [
   {
     name: 'Job Tracker',
     body: 'A client side, privacy focused tool, for tracking job hunting.',
@@ -118,20 +118,20 @@ const tools = [
     cta: 'Launch Tool',
   },
   {
+    name: 'Time Keeper',
+    body: 'A simple time tracking tool, for making sure I don\'t spend too long working.',
+    href: 'https://www.nerdie.dev/time-keeper/',
+    icon: 'lucide:clock-check',
+    accent: 'var(--teal-accent)',
+    cta: 'Launch Tool',
+  },
+  {
     name: 'Momentum Mod',
-    body: 'Website / API. Alex helped build this open source platform.',
+    body: 'Website / API. Alex chose and contributed to the migration of the Momentum Mod API from express to NestJS.',
     href: 'https://github.com/momentum-mod/website',
     icon: 'lucide:code-2',
     accent: 'var(--cyan-accent)',
     cta: 'GitHub Repo',
-  },
-  {
-    name: 'Gitmoji',
-    body: 'because yes, emojis should be in git commits too. A utility Alex uses daily.',
-    href: 'https://gitmoji.dev/',
-    icon: 'lucide:smile',
-    accent: 'var(--teal-accent)',
-    cta: 'External Tool',
   },
 ];
 
