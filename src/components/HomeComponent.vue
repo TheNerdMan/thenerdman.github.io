@@ -1,14 +1,36 @@
 <template>
   <header class="hero">
-    <button
-      type="button"
-      class="hero__logo"
-      :aria-pressed="crazyEyes"
-      :aria-label="crazyEyes ? 'Calm the logo down' : 'Make the Nerdie logo go crazy'"
-      @click="toggleCrazyEyes"
-    >
-      <LogoIcon ref="logo" :width="128" :height="128" />
-    </button>
+    <div class="hero__logo-stage">
+      <button
+        v-if="!swapped"
+        type="button"
+        class="hero__logo"
+        :class="{ 'hero__logo--spinning': spinning, 'hero__logo--gone': awake }"
+        aria-label="Wake the Nerdie head"
+        @click="wake"
+      >
+        <LogoIcon :width="128" :height="128" />
+      </button>
+
+      <!-- Mounted while the logo spins, so the reveal has nothing left to load. -->
+      <div
+        v-if="spinning || spun"
+        class="hero__head"
+        :class="{ 'hero__head--live': awake }"
+        :aria-hidden="!awake"
+        role="img"
+        aria-label="The Nerdie head, watching your cursor"
+      >
+        <TresCanvas>
+          <TresPerspectiveCamera :position="[0, 0, 6.2]" :fov="35" />
+          <Suspense>
+            <NerdieHead :mouth="dizzy ? 2 : 0" :dizzy="dizzy" @ready="onHeadReady" />
+          </Suspense>
+          <TresAmbientLight :intensity="1.4" />
+          <TresDirectionalLight :position="[1.5, 2, 3]" />
+        </TresCanvas>
+      </div>
+    </div>
 
     <div class="hero__intro">
       <h1 class="hero__title">
@@ -37,7 +59,10 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue';
+import { usePreferredReducedMotion } from '@vueuse/core';
+import { TresCanvas } from '@tresjs/core';
 import LogoIcon from './icons/LogoIcon.vue';
+import NerdieHead from './NerdieHead/NerdieHead.vue';
 
 const navItems = [
   { label: 'Tools', href: '#tools' },
@@ -45,28 +70,53 @@ const navItems = [
   { label: 'Playground', href: '#playground' },
 ];
 
-const logo = ref<InstanceType<typeof LogoIcon> | null>(null);
-const crazyEyes = ref(false);
-let crazyEyesTimer: number | null = null;
+const SPIN_MS = 1100;
+const DIZZY_MS = 2600;
+// Matches the opacity transition on .hero__logo / .hero__head.
+const REVEAL_MS = 350;
 
-function toggleCrazyEyes() {
-  if (crazyEyesTimer !== null) {
-    window.clearInterval(crazyEyesTimer);
-    crazyEyesTimer = null;
-    crazyEyes.value = false;
-    logo.value?.resetEyes();
-    return;
-  }
+const awake = ref(false);
+const swapped = ref(false);
+const spinning = ref(false);
+const spun = ref(false);
+const headReady = ref(false);
+const dizzy = ref(false);
+const reducedMotion = usePreferredReducedMotion();
+const timers: number[] = [];
 
-  if (!logo.value) return;
-  crazyEyes.value = true;
-  logo.value.randomizeEyes();
-  crazyEyesTimer = window.setInterval(() => logo.value?.randomizeEyes(), 500);
+function after(ms: number, run: () => void) {
+  timers.push(window.setTimeout(run, ms));
 }
 
-onBeforeUnmount(() => {
-  if (crazyEyesTimer !== null) window.clearInterval(crazyEyesTimer);
-});
+// The logo finishes spinning and the head has drawn: hand over.
+function swap() {
+  if (!spun.value || !headReady.value || awake.value) return;
+  awake.value = true;
+  spinning.value = false;
+  dizzy.value = reducedMotion.value !== 'reduce';
+  if (dizzy.value) after(DIZZY_MS, () => (dizzy.value = false));
+  // Leave the fading logo in the DOM until the head has taken over.
+  after(REVEAL_MS, () => (swapped.value = true));
+}
+
+function wake() {
+  if (spinning.value || awake.value) return;
+  const still = reducedMotion.value === 'reduce';
+  // Keep spinning until the model is loaded, so a slow fetch is never a blank box.
+  spinning.value = !still;
+
+  after(still ? 0 : SPIN_MS, () => {
+    spun.value = true;
+    swap();
+  });
+}
+
+function onHeadReady() {
+  headReady.value = true;
+  swap();
+}
+
+onBeforeUnmount(() => timers.forEach(window.clearTimeout));
 </script>
 
 <style scoped>
@@ -80,19 +130,45 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
-.hero__logo {
+.hero__logo-stage {
   position: relative;
   width: 8rem;
   height: 8rem;
   margin-bottom: 2.5rem;
+}
+
+.hero__logo,
+.hero__head {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.hero__logo {
+  z-index: 1;
   padding: 0;
   border: 0;
   background: none;
-  border-radius: 50%;
   cursor: pointer;
+  transition: opacity 0.35s ease;
 }
 
-.hero__logo::before {
+.hero__logo--gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hero__head {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.hero__head--live {
+  opacity: 1;
+}
+
+.hero__logo::before,
+.hero__head::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -111,6 +187,37 @@ onBeforeUnmount(() => {
 .hero__logo :deep(svg) {
   position: relative;
   display: block;
+  transform-origin: center;
+}
+
+@media (hover: hover) {
+  .hero__logo:hover:not(.hero__logo--spinning) :deep(svg) {
+    animation: logo-nudge 0.9s ease-in-out infinite;
+  }
+}
+
+/* The cursor is still over the button while it spins, so this has to win outright. */
+.hero__logo--spinning :deep(svg) {
+  animation: logo-spin 0.25s linear infinite;
+}
+
+@keyframes logo-nudge {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(12deg);
+  }
+}
+
+@keyframes logo-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .hero__intro {
@@ -213,9 +320,15 @@ onBeforeUnmount(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .hero__logo::before,
+  .hero__logo,
   .hero__handle,
-  .hero__nav-link {
+  .hero__nav-link,
+  .hero__head {
     transition: none;
+  }
+
+  .hero__logo:hover :deep(svg) {
+    animation: none;
   }
 }
 </style>

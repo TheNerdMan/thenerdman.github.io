@@ -36,7 +36,7 @@
 import { RouterLink } from 'vue-router';
 import { TresCanvas } from '@tresjs/core';
 import { CameraControls } from '@tresjs/cientos';
-import NerdieHead from './NerdieHead/NerdieHead.vue';
+import NerdieHead from '@/components/NerdieHead/NerdieHead.vue';
 import { useVoiceMouth } from '@/composables/useVoiceMouth';
 
 const MOUTH_SHAPES = 4;

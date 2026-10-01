@@ -252,30 +252,6 @@ function accent(color: string): Record<string, string> {
   color: var(--teal-accent);
 }
 
-/* --- glass cards ------------------------------------------------------ */
-
-.glass-card {
-  --accent: var(--teal-accent);
-  display: block;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 2rem;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition:
-    background 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-    border-color 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-    box-shadow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(62, 170, 153, 0.4);
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-}
-
 .cards {
   display: grid;
   grid-template-columns: 1fr;

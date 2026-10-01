@@ -1,20 +1,29 @@
 <template>
   <transition name="card-slide">
     <div v-if="localShow" class="modal-overlay">
-      <div class="modal-content card-bottom" v-on-click-outside="emitClose">
-        <button class="modal-close" @click="emitClose">&times;</button>
-        <div v-if="!localBlog">
-          <p>Loading blog content...</p>
-        </div>
-        <div v-else>
-          <h2>{{ localBlog.title }}</h2>
-          <p v-if="localBlog.date">Published on: {{ localBlog.date }}</p>
-          <MarkdownRendererComponent :content="localBlog.markdown.content" />
+      <div
+        ref="sheet"
+        class="modal-content card-bottom"
+        v-on-click-outside="emitClose"
+        @scroll.passive="handleScroll"
+      >
+        <header class="sheet-head">
+          <div>
+            <h2 class="sheet-title">{{ blog?.title }}</h2>
+            <p v-if="blog?.date" class="sheet-date">{{ blog.date }}</p>
+          </div>
+          <div class="sheet-actions">
+            <!-- The floating site-wide home link sits under this sheet's scrim. -->
+            <RouterLink class="sheet-home" :to="{ name: ROUTE_NAMES.HOME }">Home</RouterLink>
+            <button class="modal-close" aria-label="Close post" @click="emitClose">&times;</button>
+          </div>
+        </header>
+        <div class="sheet-body">
+          <MarkdownRendererComponent v-if="blog" :content="blog.markdown.content" />
+          <p v-else>Loading blog content...</p>
         </div>
         <transition name="fade-up">
-          <button v-if="showBackToTop && isMobile" class="back-to-top" @click="scrollToTop">
-            Back to top
-          </button>
+          <button v-if="showBackToTop" class="back-to-top" @click="scrollToTop">Back to top</button>
         </transition>
       </div>
     </div>
@@ -22,8 +31,10 @@
 </template>
 
 <script setup lang="ts">
-import { defineEmits, computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { vOnClickOutside } from '@vueuse/components';
+import { ROUTE_NAMES } from '@/router';
 import type { BlogFile } from '@/utils/types/BlogItem.type';
 import MarkdownRendererComponent from '../Markdown/MarkdownRendererComponent.vue';
 
@@ -43,106 +54,167 @@ const localShow = computed({
   },
 });
 
-const localBlog = computed({
-  get() {
-    return props.blog;
-  },
-  set(val: BlogFile | undefined) {
-    if (!val) {
-      setTimeout(() => emit('close'), transitionDuration + 10);
-    }
-  },
-});
+const sheet = ref<HTMLElement | null>(null);
+const showBackToTop = ref(false);
 
 function emitClose() {
   localShow.value = false;
 }
 
+function handleScroll(event: Event) {
+  const el = event.currentTarget as HTMLElement;
+  const scrollable = el.scrollHeight - el.clientHeight;
+  showBackToTop.value = scrollable > 0 && el.scrollTop > scrollable * 0.05;
+}
+
 function scrollToTop() {
-  const modalContent = document.querySelector('.modal-content');
-  if (modalContent) {
-    modalContent.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  sheet.value?.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-const isMobile = ref(false);
-const showBackToTop = ref(false);
-
-function handleScroll() {
-  const modalContent = document.querySelector('.modal-content');
-  if (modalContent) {
-    const scrollTop = modalContent.scrollTop;
-    const scrollHeight = modalContent.scrollHeight - modalContent.clientHeight;
-    showBackToTop.value = scrollHeight > 0 && scrollTop > scrollHeight * 0.05;
-  }
-}
-
-onMounted(() => {
-  // Simple mobile detection (can be improved)
-  isMobile.value =
-    window.matchMedia('(max-width: 600px)').matches || /Mobi|Android/i.test(navigator.userAgent);
-
-  const modalContent = document.querySelector('.modal-content');
-  if (modalContent) {
-    modalContent.addEventListener('scroll', handleScroll);
-  }
-  handleScroll(); // Initial check
-});
-
-// Clean up event listener
-onBeforeUnmount(() => {
-  const modalContent = document.querySelector('.modal-content');
-  if (modalContent) {
-    modalContent.removeEventListener('scroll', handleScroll);
-  }
-});
 </script>
 
 <style scoped>
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .card-bottom {
-  background: var(--color-background, #fff);
-  color: var(--color-text, #222);
-  border-radius: 18px 18px 0 0;
-  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.18);
-  max-width: 80vw;
-  width: 100vw;
-  max-height: 85vh;
-  overflow-y: auto;
-  padding: 2rem 1.5rem 1.5rem 1.5rem;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(56rem, 100vw);
+  max-height: 88vh;
   margin-bottom: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: var(--color-background);
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.45);
   animation: card-slide-up 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* --- sticky head --------------------------------------------------------- */
+
+.sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-background) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sheet-actions {
+  display: flex;
+  flex: none;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.sheet-home {
+  color: var(--teal);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+.sheet-home:hover {
+  color: var(--teal-accent-hover);
+}
+
+.sheet-title {
+  color: var(--color-heading);
+  font-size: 1.4375rem;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.sheet-date {
+  margin-top: 0.4rem;
+  color: var(--teal);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #888;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 1.25rem;
+  line-height: 1;
   cursor: pointer;
-  z-index: 10;
-  transition: color 0.2s;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .modal-close:hover {
-  color: #222;
+  border-color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 16%, transparent);
+  color: var(--color-heading);
 }
+
+.sheet-body {
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+/* --- back to top --------------------------------------------------------- */
+
+.back-to-top {
+  position: sticky;
+  bottom: 1.5rem;
+  z-index: 3;
+  align-self: center;
+  padding: 0.6rem 1.5rem;
+  border: 1px solid var(--color-border-hover);
+  border-radius: 2rem;
+  background: var(--color-background-soft);
+  color: var(--color-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.back-to-top:hover {
+  border-color: var(--teal);
+  color: var(--color-heading);
+}
+
+/* --- transitions --------------------------------------------------------- */
+
 .card-slide-enter-active,
 .card-slide-leave-active {
   transition:
@@ -187,55 +259,31 @@ onBeforeUnmount(() => {
   transform: translateY(0);
 }
 
-.back-to-top {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 2.5rem;
-  z-index: 1100;
-  background: var(--color-background, #fff);
-  color: var(--color-text, #222);
-  border: 1px solid #ccc;
-  border-radius: 2rem;
-  padding: 0.5rem 1.5rem;
-  font-size: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-.back-to-top:hover {
-  background: #222;
-  color: #fff;
-}
 @media (max-width: 600px) {
   .modal-overlay {
     align-items: stretch;
-    padding: 0;
   }
   .card-bottom {
-    border-radius: 0;
-    max-width: 100vw;
     width: 100vw;
     max-height: 100vh;
     height: 100vh;
-    margin-bottom: 0;
-    padding-top: 3.5rem;
+    border: 0;
+    border-radius: 0;
     animation: none;
   }
+  .sheet-head {
+    padding: 1.25rem 1.25rem 1rem;
+  }
   .modal-close {
-    top: 1.2rem;
-    right: 1.2rem;
-    font-size: 2.2rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.5rem;
+  }
+  .sheet-body {
+    padding: 2rem 1.25rem 4rem;
   }
   .back-to-top {
-    bottom: 1.2rem;
-    font-size: 1.1rem;
-    width: calc(100vw - 2rem);
-    left: 1rem;
-    transform: none;
-    border-radius: 1.5rem;
+    bottom: 1.25rem;
   }
 }
 </style>
