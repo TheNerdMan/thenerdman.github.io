@@ -18,6 +18,15 @@
   --nd-c-text-light-2: rgba(60, 60, 60, 0.66);
   --nd-c-text-dark-1: var(--nd-c-white);
   --nd-c-text-dark-2: rgba(235, 235, 235, 0.64);
+
+  /* Brand accents. --teal is lifted straight from the logo artwork (#3EAA99);
+     --cyan is its approved cool counterpart. The *-accent trio are the
+     vivid tones used for small UI accents, tuned to sit on the dark canvas. */
+  --teal: #3eaa99;
+  --cyan: #00d2ff;
+  --teal-accent: #14b8a6;
+  --teal-accent-hover: #2dd4bf;
+  --cyan-accent: #06b6d4;
 }
 
 :root {
@@ -69,4 +78,11 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: 4px;
 }

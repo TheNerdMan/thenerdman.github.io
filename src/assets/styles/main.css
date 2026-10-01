@@ -7,6 +7,15 @@
   font-weight: normal;
 }
 
+/* The landing and the blog are full-bleed dark canvases that centre their own
+   columns, so they must not sit inside #app's centred 1280px column. Scoped to
+   those two routes so every other route keeps the shared container untouched. */
+#app:has(.landing),
+#app:has(.blog) {
+  max-width: none;
+  padding: 0;
+}
+
 a {
   color: var(--color-heading);
   transition: background-color 0.3s ease;
@@ -16,4 +25,29 @@ a {
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
   }
+}
+
+/* Frosted card surface, shared by the landing sections and the blog index so the
+   two stay in step. Deliberately subtle: 3% white fill, 8% hairline, 12px blur. */
+.glass-card {
+  --accent: var(--teal-accent);
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    background 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    border-color 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(62, 170, 153, 0.4);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
