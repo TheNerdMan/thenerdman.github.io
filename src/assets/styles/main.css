@@ -7,6 +7,14 @@
   font-weight: normal;
 }
 
+/* The landing page is a full-bleed dark canvas that centres its own 80rem
+   columns, so it must not sit inside #app's centred 1280px column. Scoped to
+   the landing so every other route keeps the shared container untouched. */
+#app:has(.landing) {
+  max-width: none;
+  padding: 0;
+}
+
 a {
   color: var(--color-heading);
   transition: background-color 0.3s ease;

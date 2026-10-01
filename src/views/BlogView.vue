@@ -21,31 +21,12 @@ import { ref, onMounted } from 'vue';
 import BlogItemComponent from '@/components/Blog/BlogItemComponent.vue';
 import type { BlogFile } from '@/utils/types/BlogItem.type';
 import BlogViewerComponent from '@/components/Blog/BlogViewerComponent.vue';
-import { CustomMarkdownParser } from '@/utils/classes/CustomMarkDownParser.class';
 import { useRouter, useRoute } from 'vue-router';
+import { useBlogPosts } from '@/composables/useBlogPosts';
 
 const router = useRouter();
 const route = useRoute();
-const blogFiles = import.meta.glob('@/assets/blogs/**/*.md', {
-  eager: true,
-  query: '?raw',
-  import: 'default',
-});
-
-const blogs = ref<BlogFile[]>(
-  Object.entries(blogFiles).map(([path, content]) => {
-    // Extract filename and maybe date/title from path
-    const match = path.match(/blogs\/(\d{4})\/(\d{4}-\d{2}-\d{2})-(.+)\.md$/);
-    return {
-      path,
-      markdown: new CustomMarkdownParser(content as string),
-      year: match ? match[1] : '',
-      date: match ? match[2] : '',
-      slug: match ? match[3] : '',
-      title: match ? match[3].replace(/-/g, ' ') : path,
-    };
-  }),
-);
+const blogs = ref<BlogFile[]>(useBlogPosts());
 
 const showBlogViewer = ref(false);
 const blogToView = ref<BlogFile>();
